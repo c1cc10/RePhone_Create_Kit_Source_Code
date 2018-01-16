@@ -42,6 +42,7 @@ VM_TIMER_ID_PRECISE sys_timer_id = 0;
 static VMUINT8* g_font_pool;
 VMUINT8 sys_record_time = 0;
 unsigned char sys_blink = 0;
+char* g_version	= "keyboard.0.2";
 
 
 extern void gui_setup(void);

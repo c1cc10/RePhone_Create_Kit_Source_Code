@@ -13,7 +13,7 @@
 #include "vmchset.h"
 #include <stdlib.h>
 
-char g_system_time_string[17] = {'2', '0', '0', '4', '-', '0', '1', '-', '0', '1', '\n', '0', '0', ':', '0', '0', 0 };
+char g_system_time_string[17] = {'2', '0', '1', '7', '-', '0', '1', '-', '0', '1', '\n', '0', '0', ':', '0', '0', 0 };
 vm_date_time_t g_time_set;
 char g_time_set_string[5][5] = {0,};
 uint8_t g_time_set_focus = 4;
@@ -44,6 +44,7 @@ extern UG_WINDOW g_ifttt_list_window;
 
 extern UG_WINDOW g_led_matrix_window;
 
+extern char* g_version;
 extern void lcd_backlight_level(VMUINT32 ulValue);
 extern char *itoa(int num, char* str, int radix);
 
@@ -52,6 +53,7 @@ extern void call_window_create();
 extern void sms_window_create();
 extern void ifttt_window_create();
 extern void input_window_create();
+extern void keyboard_window_create();
 extern void led_matrix_window_create();
 extern void input_window_show(int id);
 extern void ws2812_window_create();
@@ -66,6 +68,7 @@ void time_update_callback(void)
     static vm_date_time_t last_time = { 0, };
     vm_date_time_t current_time;
     int battery_status;
+    int sim_status;
     int level = 0;
 
     if (vm_time_get_date_time(&current_time) >= 0) {
@@ -111,6 +114,12 @@ void time_update_callback(void)
     if (battery_status != g_battery_status) {
         g_battery_status = battery_status;
         UG_ButtonSetText(&g_home_window, 7, g_battery_info[battery_status]);
+    }
+    sim_status = vm_gsm_sim_get_card_status(VM_GSM_SIM_SIM1); // we know we only have ONE SIM card
+    if (sim_status == VM_GSM_SIM_STATUS_WORKING) {
+    	UG_ButtonSetText(&g_home_window, 8, "L");
+    } else {
+    	UG_ButtonSetText(&g_home_window, 8, "");
     }
 }
 
@@ -159,6 +168,7 @@ static void home_window_create(void)
     UG_WindowSetStyle(&g_home_window, WND_STYLE_2D);
 
     index = 0;
+    /*crea la pulsantiera in basso (id da 0 a 6)*/
     for (i = 0; i < 2; i++) {
         for (j = 0; j < 3; j++) {
             UG_ButtonCreate(&g_home_window, buttons + index, index, 80 * j,
@@ -181,7 +191,7 @@ static void home_window_create(void)
     UG_ButtonSetBackColor(&g_home_window, index, 0);
 
     index++;
-
+    /* id = 7 -> batteria */
     UG_ButtonCreate(&g_home_window, buttons + index, index, 200, 0, 239, 26);
     UG_ButtonSetFont(&g_home_window, index, &FONT_ICON24);
     UG_ButtonSetStyle(&g_home_window, index,
@@ -189,9 +199,10 @@ static void home_window_create(void)
     UG_ButtonSetBackColor(&g_home_window, index, 0);
 
     index++;
-
+    /*id = 8 Alto a SX: SIM*/
     UG_ButtonCreate(&g_home_window, buttons + index, index, 0, 0, 70, 26);
-    UG_ButtonSetFont(&g_home_window, index, &FONT_SIZE20);
+    //UG_ButtonSetFont(&g_home_window, index, &FONT_SIZE20);
+    UG_ButtonSetFont(&g_home_window, index, &FONT_ICON24);
     UG_ButtonSetStyle(&g_home_window, index,
             BTN_STYLE_2D | BTN_STYLE_NO_BORDERS);
     UG_ButtonSetBackColor(&g_home_window, index, 0);
@@ -201,15 +212,13 @@ static void home_window_create(void)
     }
 
     index++;
-
+    /* id = 9 -> ?? */
     if (vm_gsm_sim_has_card()) {
         UG_ButtonCreate(&g_home_window, buttons + index, index, 0, 0, 32, 26);
         UG_ButtonSetFont(&g_home_window, index, &FONT_ICON24);
         UG_ButtonSetStyle(&g_home_window, index,
                 BTN_STYLE_2D | BTN_STYLE_NO_BORDERS);
         UG_ButtonSetBackColor(&g_home_window, index, 0);
-
-        UG_ButtonSetText(&g_home_window, index, NULL);
     }
     time_update_callback();
 
@@ -798,6 +807,7 @@ void windows_create(void)
     settings_window_create();
 
     input_window_create();
+    keyboard_window_create();
 
     ws2812_window_create();
     led_matrix_window_create();
