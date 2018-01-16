@@ -156,7 +156,9 @@ void handle_touchevt(VM_TOUCH_EVENT event, VMINT x, VMINT y)
     /* output log to monitor or catcher */
     
     screen_resume();
-
+    if (screen_suspend()) {
+    	return;
+    }
     y = 239 - y - 8;
     x = 239 - x;
 
