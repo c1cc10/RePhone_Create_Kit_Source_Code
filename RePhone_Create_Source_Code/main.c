@@ -22,7 +22,7 @@
 #include "vmkeypad.h"
 #include "sensor.h"
 #include "ifttt_book.h"
-
+#include "bt.h"
 
 #ifdef CUSTOM_TOUCHPAD
 #include "tp_focaitech_ft6x06.h"
@@ -50,7 +50,11 @@ extern void windows_create(void);
 extern void handle_touchevt(VM_TOUCH_EVENT event, VMINT x, VMINT y);
 extern void screen_resume(void);
 extern void lcd_backlight_level(VMUINT32 ulValue);
+extern void app_btcm_start(void);
 
+void bluetooth_init(void){
+	app_btcm_start();
+}
 
 void sys_gpio_init(void){
 	pinMode(RLED_GPIO,OUTPUT);
@@ -226,6 +230,7 @@ void vm_main(void)
 	sys_gpio_init();
     font_init();
     lcd_st7789s_init();
+    /* bluetooth_init(); */
 #ifdef CUSTOM_TOUCHPAD
     tp_ft6x06_init();
 #else
