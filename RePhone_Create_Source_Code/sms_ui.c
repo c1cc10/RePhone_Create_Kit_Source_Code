@@ -22,9 +22,11 @@ char g_sms_new_message_info[16] = {0,};
 char *g_sms_action_number = NULL;
 char *g_sms_action_content = NULL;
 extern UG_WINDOW g_home_window;
+char g_expr_keyboard_string[32] = { 0, };
 
 extern void contact_list_window_show();
 extern void input_window_show(char *buf, int len, int id);
+extern void keyboard_window_show(char *buf2, int len2, int target);
 extern void screen_resume(void);
 
 void sms_new_message_callback(char *number, char *content)
@@ -186,19 +188,19 @@ void sms_info_window_callback(UG_MESSAGE *msg)
 
 void sms_info_window_create(void)
 {
-    static UG_BUTTON buttons[3];
-    static UG_OBJECT objects[3];
-    char *actions[] = { "1", "G" };
+    static UG_BUTTON buttons[4];
+    static UG_OBJECT objects[4];
+    char *actions[] = { "1", "G", "H" };
     int i = 0;
 
     UG_WindowCreate(&g_sms_info_window, objects,
             sizeof(objects) / sizeof(*objects), sms_info_window_callback);
     UG_WindowSetStyle(&g_sms_info_window, WND_STYLE_2D);
 
-    for (i = 0; i < 2; i++) {
+    for (i = 0; i < 3; i++) {
         int index = i;
-        UG_ButtonCreate(&g_sms_info_window, buttons + index, index, 120 * i,
-                200, 120 * i + 120 - 1, 239);
+        UG_ButtonCreate(&g_sms_info_window, buttons + index, index, 80 * i,
+                200, 80 * i + 80 - 1, 239);
         UG_ButtonSetFont(&g_sms_info_window, index, &FONT_ICON24);
         UG_ButtonSetText(&g_sms_info_window, index, actions[i]);
         UG_ButtonSetStyle(&g_sms_info_window, index,
@@ -206,13 +208,13 @@ void sms_info_window_create(void)
 
     }
 
-    UG_ButtonCreate(&g_sms_info_window, buttons + 2, 2, 10, 10, 229, 189);
-    UG_ButtonSetFont(&g_sms_info_window, 2, &FONT_SIZE20);
-    UG_ButtonSetStyle(&g_sms_info_window, 2,
+    UG_ButtonCreate(&g_sms_info_window, buttons + 3, 3, 10, 10, 229, 189);
+    UG_ButtonSetFont(&g_sms_info_window, 3, &FONT_SIZE20);
+    UG_ButtonSetStyle(&g_sms_info_window, 3,
             BTN_STYLE_2D | BTN_STYLE_NO_BORDERS);
-    UG_ButtonSetBackColor(&g_sms_info_window, 2, 0);
-    UG_ButtonSetAlignment(&g_sms_info_window, 2, ALIGN_TOP_LEFT);
-    UG_ButtonSetHSpace(&g_sms_info_window, 2, 8);
+    UG_ButtonSetBackColor(&g_sms_info_window, 3, 0);
+    UG_ButtonSetAlignment(&g_sms_info_window, 3, ALIGN_TOP_LEFT);
+    UG_ButtonSetHSpace(&g_sms_info_window, 3, 8);
 }
 
 void sms_info_window_show(char *info)
@@ -224,7 +226,7 @@ void sms_info_window_show(char *info)
         icon = "F";
     }
     UG_ButtonSetText(&g_sms_info_window, 1, icon);
-    UG_ButtonSetText(&g_sms_info_window, 2, info);
+    UG_ButtonSetText(&g_sms_info_window, 3, info);
     UG_WindowShow(&g_sms_info_window);
 }
 
@@ -232,21 +234,30 @@ void sms_new_window_update()
 {
     int i;
     int number = sms_get_max_item_num();
+    char *icon = NULL;
+    /* orig
     for (i = 0; i < 4; i++) {
+    */
+	for (i = 0; i < 3; i++) {
         char *message = NULL;
-        char *icon = NULL;
+        icon	= NULL;
         int index = i + g_sms_template_first_visible;
         if (index < number) {
             message = sms_get_item(index);
         }
-        UG_ButtonSetText(&g_sms_new_window, 10 + i, message);
+        UG_ButtonSetText(&g_sms_new_window, 11 + i, message);
 
         if (index == g_sms_select_message) {
             icon = ":";
         }
-        UG_ButtonSetText(&g_sms_new_window, 6 + i, icon);
+        UG_ButtonSetText(&g_sms_new_window, 7 + i, icon);
 
     }
+	icon	= NULL;
+	if (g_sms_select_message == 10) {
+		icon	= ":";
+	}
+    UG_ButtonSetText(&g_sms_new_window, 6, icon);
 }
 
 void sms_new_window_callback(UG_MESSAGE *msg)
@@ -274,14 +285,22 @@ void sms_new_window_callback(UG_MESSAGE *msg)
                 case 3: // send
                     if (g_sms_new_window_prev == &g_sms_inbox_window) {
                         gsm_sms_begin(UG_ButtonGetText(&g_sms_new_window, 5));
-                        gsm_sms_send(sms_get_item(g_sms_select_message));
+                        if (g_sms_select_message == 10) {
+                        	gsm_sms_send(UG_ButtonGetText(&g_sms_new_window, 10));
+                        } else {
+                        	gsm_sms_send(sms_get_item(g_sms_select_message));
+                        }
 
                         UG_TextboxSetText(&g_sms_sending_window, 1, NULL);
 //                        UG_ButtonHide(&g_sms_sending_window, 0);
                         UG_WindowShow(&g_sms_sending_window);
                     } else {
                         strcpy(g_sms_action_number, UG_ButtonGetText(&g_sms_new_window, 5));
-                        strcpy(g_sms_action_content, sms_get_item(g_sms_select_message));
+                        if (g_sms_select_message == 10) {
+                        	strcpy(g_sms_action_content, UG_ButtonGetText(&g_sms_new_window, 10));
+                        } else {
+                            strcpy(g_sms_action_content, sms_get_item(g_sms_select_message));
+                        }
 
                         UG_WindowShow(g_sms_new_window_prev);
                     }
@@ -291,20 +310,28 @@ void sms_new_window_callback(UG_MESSAGE *msg)
                     contact_list_window_show();
                     break;
                 case 6:
+                	g_sms_select_message	= 10;
+                	sms_new_window_update();
+                	break;
                 case 7:
                 case 8:
                 case 9:
-                    select = msg->sub_id - 6 + g_sms_template_first_visible;
+                    select = msg->sub_id - 7 + g_sms_template_first_visible;
                     if (select < number) {
                         g_sms_select_message = select;
                         sms_new_window_update();
                     }
                     break;
                 case 10:
+                	keyboard_window_show(g_expr_keyboard_string, sizeof(g_expr_keyboard_string), 10);
+                	break;
                 case 11:
                 case 12:
                 case 13:
+                	/* orig
                     select = msg->sub_id - 10 + g_sms_template_first_visible;
+                    */
+                    select = msg->sub_id - 11 + g_sms_template_first_visible;
                     if (select < number) {
                         g_sms_select_message = select;
                         sms_new_window_update();
@@ -372,6 +399,7 @@ void sms_new_window_create(void)
         UG_ButtonSetAlignment(&g_sms_new_window, index, ALIGN_CENTER_LEFT);
         UG_ButtonSetHSpace(&g_sms_new_window, index, 8);
     }
+    UG_ButtonSetText(&g_sms_new_window, 10, "<Type Msg>");
 }
 
 void sms_new_window_show()
